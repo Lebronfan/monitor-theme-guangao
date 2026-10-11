@@ -1,7 +1,7 @@
 import { memo, useEffect, useMemo, useState } from "react"
 import {
   Area, AreaChart, Brush, CartesianGrid, ComposedChart, Line, ResponsiveContainer,
-  Tooltip, XAxis, YAxis, type DotItemDotProps,
+  Text, Tooltip, XAxis, YAxis, type DotItemDotProps, type XAxisTickContentProps,
 } from "recharts"
 
 import { Badge } from "@/components/ui/badge"
@@ -427,6 +427,17 @@ const NodeHistory = memo(function NodeHistory({ nodeId, memTotal, diskTotal, his
       domain: ["dataMin", "dataMax"] as const,
       ticks,
       tickFormatter: tickClock(ticks, hours),
+      // Recharts measures tick widths outside the theme's font context. Anchor
+      // the last label inside its actual timestamp instead of trusting that
+      // estimate at the SVG's right edge (also after Brush zoom or resizing).
+      tick: ({ x, y, index, visibleTicksCount, payload, className }: XAxisTickContentProps) => (
+        <Text
+          x={index === visibleTicksCount - 1 ? payload.coordinate : Number(x)}
+          y={Number(y)} fontSize={11} fill="currentColor" verticalAnchor="start"
+          textAnchor={index === visibleTicksCount - 1 ? "end" : "middle"}
+          className={className}
+        >{tickClock(ticks, hours)(payload.value)}</Text>
+      ),
       minTickGap: hours > 24 ? 72 : 40,
       ...AXIS,
     }
