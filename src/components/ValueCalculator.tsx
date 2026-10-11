@@ -87,10 +87,13 @@ export function ValueCalculator({ nodes, variant }: { nodes: Node[]; variant: st
   const markup = value === null || form.sale.trim() === '' ? null : premium(sale, value);
   const rows: [string, string][] = [
     ['交易日期', form.trade], ['到期日期', form.expires], ['续费价格', Number.isFinite(amount) ? money(amount, form.currency) : '—'],
-    ['外币汇率', `1 ${form.currency} = ${form.rate} CNY`], ['付款周期', `${form.days} 天`], ['剩余天数', `${Math.max(0, remaining ?? 0)} 天`],
+    ['外币汇率', `1 ${form.currency} = ${form.rate} CNY`],
+    ['付款周期', cycles.find(([key]) => key === form.cycle)?.[1] || '自定义周期'],
+    ['周期天数', `${form.days} 天`], ['剩余天数', `${Math.max(0, remaining ?? 0)} 天`],
     ['剩余价值', value === null ? '—' : money(value, 'CNY')],
+    ['核对公式', value === null ? '—' : `${form.amount} ${form.currency} × ${form.rate} CNY/${form.currency} × ${Math.max(0, remaining ?? 0)} 天 ÷ ${form.days} 天 = ${money(value, 'CNY')}`],
     ...(markup ? [['售价', money(sale, 'CNY')], ['溢价', `${money(markup.amount, 'CNY')} / ${markup.percent === null ? '基数为零，不计算溢价率' : `${markup.percent.toFixed(1)}%`}`]] as [string, string][] : []),
-    ['折算说明', '按每周期费用折算全部剩余天数；月付按30天，年付按365天，可改周期天数，未计手续费'],
+    ['折算说明', '以本次填写的周期天数为准，不按自然月自动换算；默认月付30天、年付365天，可填写实际天数。剩余天数按交易日至到期日的日历差计算，过期归零，多周期不封顶。结果按人民币保留两位小数，未计手续费。'],
   ];
   const markdown = valueMarkdown(rows);
   const copy = async () => {
