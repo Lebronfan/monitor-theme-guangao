@@ -50,6 +50,8 @@ https://github.com/ayingQAQ/monitor-theme-guangao
 
 ## 开发依据与许可
 
+已按 Monitor Hub v1.4.1 的主题适配要求验证：匿名 WebSocket 握手被限流时轮询并重连、浏览器禁用站点存储时保持可用、新旧历史字段兼容及纯文本渲染。现有图表布局保持不变。
+
 遵循 [主题开发指南](https://monitor-document.pages.dev/dev/theme) 和 [架构与协议](https://monitor-document.pages.dev/dev/architecture)。
 
 本项目采用 [MIT License](LICENSE)。数据接口、格式化、历史图表和部分共享组件参考 [monitor-theme-default](https://github.com/monitor-probe/monitor-theme-default)，保留原作者版权声明。来源版本见 [THIRD_PARTY.md](THIRD_PARTY.md)，依赖许可见 [THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt)。手绘视觉参考 [PaperCSS](https://github.com/papercss/papercss) 与 [Wired Elements](https://github.com/rough-stuff/wired-elements) 的设计理念，未引入它们的组件代码。

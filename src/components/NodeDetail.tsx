@@ -19,6 +19,12 @@ type Point = {
   disk_used: number
   net_rx: number
   net_tx: number
+  // Added by Hub 1.4.1. Older hubs omit these history averages; they are
+  // optional and are not required to draw the existing resource charts.
+  swap_used?: number
+  tcp?: number
+  udp?: number
+  procs?: number
   // The highest rate the agent measured over one report interval within the
   // bucket, never below its mean. Absent from hubs predating it.
   net_rx_max?: number
