@@ -7,18 +7,25 @@ import defaultMarkup from "@/assets/brand-promo.svg?raw";
 const icons: Record<string, string> = { promo, neon: royal, retro };
 const normalize = (markup: string) => markup.replace(/\r/g, "").trim();
 
-/** The Hub serves uploaded site icons at /favicon.svg. Only replace our own
- * default artwork; unknown/custom icons and failed checks keep the Hub URL. */
+/** The Hub answers unknown paths with its own page shell, so a response only
+ * counts as a site icon when it is actually SVG. Anything else means there is no
+ * custom artwork to preserve: fall back to ours, which follows the chosen skin,
+ * rather than to a URL the hub does not serve. */
 export function useSkinIcon(variant: string) {
-  const [usesDefault, setUsesDefault] = useState(false);
+  const [usesDefault, setUsesDefault] = useState(true);
   useEffect(() => {
     const controller = new AbortController();
     void fetch("/favicon.svg", { signal: controller.signal, cache: "no-cache" })
-      .then(async response => response.ok ? response.text() : "")
-      .then(markup => {
-        if (!controller.signal.aborted) setUsesDefault(normalize(markup) === normalize(defaultMarkup));
+      .then(async response => {
+        if (!response.ok) return "";
+        const type = response.headers.get("content-type") || "";
+        return type.includes("svg") ? await response.text() : "";
       })
-      .catch(() => { /* Preserve the site's icon when its source is unavailable. */ });
+      .then(markup => {
+        if (controller.signal.aborted) return;
+        setUsesDefault(markup === "" || normalize(markup) === normalize(defaultMarkup));
+      })
+      .catch(() => { /* Keep our own artwork when the site's icon is unavailable. */ });
     return () => controller.abort();
   }, []);
   const icon = usesDefault ? (icons[variant] || promo) : "/favicon.svg";

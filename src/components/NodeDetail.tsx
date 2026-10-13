@@ -7,6 +7,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Country, Status } from "@/components/NodeCard"
 import { api, type Node } from "@/lib/api"
+import { mapHistory } from "@/lib/cfsm"
 import {
   axisBytes, axisTop, bytes, clockFor, cycle, despike, quarters, cpuName, FOREVER, money, osName, rate, RATE_FLOOR,
   rateAxis, tickClock, timeTicks, windows, withGaps,
@@ -168,7 +169,9 @@ function Fact({ label, value }: { label: string; value?: string | number | null 
  * point is a bucket -- its median, the range its answers spanned and the share
  * lost -- which over a month shows a route's evening pattern a day cannot.
  */
-export function NodeDetail({ node, historyDays }: { node: Node; historyDays: number }) {
+export function NodeDetail({ node, historyDays, probes, nodeProbes }: {
+  node: Node; historyDays: number; probes: Record<string, string>; nodeProbes: string[];
+}) {
   const m = node.metrics
   return (
     <div className="space-y-4">
@@ -204,7 +207,9 @@ export function NodeDetail({ node, historyDays }: { node: Node; historyDays: num
             .filter(Boolean)
             .join(" · ")}
         />
-        <Fact label="今日流量" value={`↓ ${bytes(node.day_rx)} · ↑ ${bytes(node.day_tx)}`} />
+        {/* CF-Server-Monitor reports cumulative counters, not a per-day pair,
+            so the honest figure here is the total either way. */}
+        <Fact label="累计流量" value={`↓ ${bytes(node.total_rx)} · ↑ ${bytes(node.total_tx)}`} />
         <Fact
           label="续费"
           value={[
@@ -220,14 +225,22 @@ export function NodeDetail({ node, historyDays }: { node: Node; historyDays: num
         <p className="rounded-md bg-muted px-3 py-2 text-sm whitespace-pre-wrap">{node.remark}</p>
       )}
 
-      <NodeHistory nodeId={node.id} memTotal={node.mem_total} diskTotal={node.disk_total} historyDays={historyDays} />
+      <NodeHistory
+        nodeId={node.id}
+        memTotal={node.mem_total}
+        diskTotal={node.disk_total}
+        historyDays={historyDays}
+        probes={probes}
+        nodeProbes={nodeProbes}
+      />
     </div>
   )
 }
 
 // History changes with its requested series, not with each live snapshot.
-const NodeHistory = memo(function NodeHistory({ nodeId, memTotal, diskTotal, historyDays }: {
-  nodeId: number; memTotal: number; diskTotal: number; historyDays: number;
+const NodeHistory = memo(function NodeHistory({ nodeId, memTotal, diskTotal, historyDays, probes, nodeProbes }: {
+  nodeId: string; memTotal: number; diskTotal: number; historyDays: number;
+  probes: Record<string, string>; nodeProbes: string[];
 }) {
   const ranges = useMemo(() => windows(historyDays), [historyDays])
   const [tab, setTab] = useState<(typeof TABS)[number]["key"]>("resources")
@@ -263,25 +276,16 @@ const NodeHistory = memo(function NodeHistory({ nodeId, memTotal, diskTotal, his
     setZoom(null)
     // oxlint-disable-next-line react/set-state-in-effect
     setFailed("")
-    // What this screen can resolve, in device pixels, which is the unit the line
-    // is drawn in: a 1280-wide retina panel has 2560 of them for a day of minutes.
-    // Read here rather than from a ref, since the hub only thins further, an
-    // approximate figure suffices, and the viewport is known before layout. A
-    // rotation keeps whatever it fetched with.
-    //
-    // The tab determines which half is requested; the other accounted for a third
-    // to two thirds of every response and was never drawn.
-    const points = Math.round(globalThis.innerWidth * (globalThis.devicePixelRatio || 1))
-    const series = tab === "latency" ? "ping" : "metrics"
-    api<{ metrics: Point[]; ping: PingPoint[]; probes: Probes; loss?: Loss }>(
-      `/nodes/${nodeId}/metrics?hours=${hours}&points=${points}&series=${series}`,
-    )
-      .then((next) => { if (active) setData(next) })
+    // CF-Server-Monitor answers one row set carrying both the resource and the
+    // probe columns, so a single request feeds whichever tab is on screen and
+    // the range alone decides what is asked for.
+    api<unknown[]>(`/history/all?id=${encodeURIComponent(nodeId)}&hours=${hours}`)
+      .then((rows) => { if (active) setData(mapHistory(rows, probes, nodeProbes)) })
       .catch((e: Error) => {
         if (active) { setFailed(e.message); setData({ metrics: [], ping: [], probes: {} }) }
       })
     return () => { active = false }
-  }, [nodeId, hours, tab, attempt])
+  }, [nodeId, hours, attempt, probes, nodeProbes])
 
   // One series per probe that reported, labelled from the names the samples
   // arrived with. Memoised, as are the two below: the node prop changes every few

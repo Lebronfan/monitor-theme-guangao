@@ -1,10 +1,10 @@
 {
   "name": "广告墙 · Guangao",
   "short": "monitor-theme-guangao",
-  "description": "满屏都是广告，点开全是探针。三种高饱和广告墙样式。",
+  "description": "满屏都是广告，点开全是探针。三种高饱和广告墙样式。CF-Server-Monitor 适配版。",
   "version": "1.0.5",
-  "author": "ayingQAQ",
-  "url": "https://github.com/ayingQAQ/monitor-theme-guangao",
+  "author": "ayingQAQ (original) · Lebronfan (CF-Server-Monitor port)",
+  "url": "https://github.com/Lebronfan/monitor-theme-guangao",
   "config": [
     {
       "key": "variant",

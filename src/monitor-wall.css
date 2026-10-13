@@ -1,7 +1,10 @@
 /* Advertisement typography, print-like borders, loud colour; real metrics. */
+/* The font is imported rather than taken from public/: a theme is served by the
+   hub from `index.html` and `assets/` alone, so a root-level `/fonts/...` would
+   404. Vite rewrites this relative URL into the emitted `assets/` file. */
 @font-face {
   font-family: "Guangao Note";
-  src: url("/fonts/monitor-note.woff2") format("woff2");
+  src: url("./assets/monitor-note.woff2") format("woff2");
   font-style: normal;
   font-weight: 400;
   font-display: swap;

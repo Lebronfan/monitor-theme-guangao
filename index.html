@@ -3,9 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" href="/favicon.svg" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <title>Monitor</title>
+    <!-- A theme is reverse-proxied from its index.html and assets/ alone, so the
+         icons have to be bundled: a root-level /favicon.svg would be answered by
+         the hub's own page shell instead of this theme's artwork. -->
+    <link rel="icon" href="/src/assets/brand-promo.svg" />
+    <link rel="apple-touch-icon" href="/src/assets/apple-touch-icon.png" />
+    <title>CF-Server-Monitor</title>
   </head>
   <body>
     <div id="root"></div>

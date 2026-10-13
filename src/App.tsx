@@ -9,20 +9,15 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import { Popover, Select } from "radix-ui";
-import { api, groupsOf, useNodes } from "@/lib/api";
+import { fetchMe, groupsOf, useNodes, type Me } from "@/lib/api";
 import { loadConfig } from "@/lib/config";
 import { bytes, rate } from "@/lib/format";
 import { MonitorCard } from "@/components/MonitorCard";
 import { useSkinIcon } from "@/lib/skin-icon";
 import { ValueCalculator } from "@/components/ValueCalculator";
 
-type Me = {
-  authed: boolean;
-  site_name: string;
-  public_page: boolean;
-  history_days?: number;
-  demo?: boolean;
-};
+// CF-Server-Monitor serves the admin behind the built-in theme.
+const ADMIN = "/admin#/admin";
 const loadDetail = () =>
   import("@/components/NodeDetail").then((module) => ({
     default: module.NodeDetail,
@@ -46,22 +41,32 @@ function writePreference(key: string, value: string) {
   }
 }
 
+/**
+ * CF-Server-Monitor routes by hash: `/#/` for the wall and `/#/server/:id` for
+ * one machine, so the Worker only ever serves the theme's single `index.html`
+ * and a reload on a detail page resolves without a rewrite rule.
+ */
+function readRoute() {
+  const match = location.hash.match(/^#\/server\/([^/?#]+)\/?$/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 function useNodeRoute() {
-  const read = () => {
-    const match = location.pathname.match(/^\/node\/(\d+)\/?$/);
-    return match ? Number(match[1]) : null;
-  };
-  const [id, setId] = useState(read);
+  const [id, setId] = useState(readRoute);
   useEffect(() => {
-    const sync = () => setId(read());
+    const sync = () => setId(readRoute());
+    addEventListener("hashchange", sync);
     addEventListener("popstate", sync);
-    return () => removeEventListener("popstate", sync);
+    return () => {
+      removeEventListener("hashchange", sync);
+      removeEventListener("popstate", sync);
+    };
   }, []);
   return [
     id,
-    (next: number | null) => {
-      const path = next === null ? "/" : `/node/${next}`;
-      if (location.pathname !== path) history.pushState({}, "", path);
+    (next: string | null) => {
+      const path = next === null ? "#/" : `#/server/${encodeURIComponent(next)}`;
+      if (location.hash !== path) history.pushState({}, "", path);
       setId(next);
       scrollTo(0, 0);
     },
@@ -87,7 +92,7 @@ export default function App() {
   const [group, setGroup] = useState<string | null>(null);
   const loadMe = useCallback(
     () =>
-      api<Me>("/me")
+      fetchMe()
         .then((data) => {
           setMe(data);
           setMeError("");
@@ -105,12 +110,10 @@ export default function App() {
     if (closed) void loadMe();
   }, [closed, loadMe]);
   useEffect(() => {
-    if (me && !me.public_page && !me.authed) location.href = "/admin/";
+    if (me && !me.public_page && !me.authed) location.href = ADMIN;
   }, [me]);
 
-  const sorted = [...(nodes ?? [])].sort(
-    (a, b) => a.sort - b.sort || a.id - b.id,
-  );
+  const sorted = [...(nodes ?? [])].sort((a, b) => a.sort - b.sort);
   const selected = sorted.find((node) => node.id === open);
   const groups = groupsOf(sorted);
   const ungrouped = sorted.some((node) => !node.group);
@@ -195,7 +198,7 @@ export default function App() {
           </span>
         </button>
         {config?.show_value_calculator === true && <ValueCalculator nodes={sorted} variant={variant} />}
-        <a href="/admin/" className="admin-link">
+        <a href={ADMIN} className="admin-link">
           {me.authed ? "进入后台" : "站长入口"}
           <ArrowUpRight size={15} />
         </a>
@@ -313,7 +316,9 @@ export default function App() {
                   <Suspense fallback={<p>正在加载历史曲线…</p>}>
                     <NodeDetail
                       node={selected}
-                      historyDays={me.history_days ?? 7}
+                      historyDays={me.history_days}
+                      probes={me.probes}
+                      nodeProbes={me.nodeProbes}
                     />
                   </Suspense>
                 </>
@@ -475,7 +480,7 @@ export default function App() {
               <div className="empty-state">
                 <strong>广告位招租，节点待接入。</strong>
                 <p>在后台接入节点后，这里会自动展示实时信息。</p>
-                <a href="/admin/">进入后台 ↗</a>
+                <a href={ADMIN}>进入后台 ↗</a>
               </div>
             ) : (
               <div className="node-grid">
@@ -495,7 +500,7 @@ export default function App() {
                 <strong>广告做得够大，数据看得够清。</strong>
                 <span>CPU · 内存 · 磁盘 · 流量 · 历史曲线，一站看全。</span>
               </div>
-              <a href="/admin/">
+              <a href={ADMIN}>
                 我的节点我做主 <ArrowUpRight size={20} />
               </a>
             </section>
@@ -518,7 +523,17 @@ export default function App() {
       <footer className="footer">
         <div>
           <strong>GUANGAO THEME</strong>
-          <span>每个广告位，都是探针信息。Powered by Monitor.</span>
+          <span>
+            每个广告位，都是探针信息。Powered by{" "}
+            <a
+              href="https://github.com/huilang-me/CF-Server-Monitor/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              CF-Server-Monitor
+            </a>
+            {me.version ? ` ${me.version}` : ""}
+          </span>
         </div>
       </footer>
     </div>

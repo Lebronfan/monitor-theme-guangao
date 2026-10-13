@@ -47,12 +47,17 @@ const REMARKS: Record<RemarkState, readonly string[]> = {
   ],
 };
 
-// A mixed node ID gives each server a fixed pseudo-random slot across reloads,
-// browsers and group ordering, without writing Monitor data or browser storage.
-export function nodeRemark(id: number, state: RemarkState): string {
-  let seed = id | 0;
-  seed = Math.imul(seed ^ (seed >>> 16), 0x45d9f3b);
-  seed = Math.imul(seed ^ (seed >>> 16), 0x45d9f3b);
+// The ID is mixed into a fixed pseudo-random slot so each server keeps its
+// remark across reloads, browsers and group ordering, without writing hub data
+// or browser storage. CF-Server-Monitor identifies a server by UUID rather than
+// by number, so the 32-bit mix is seeded from the string's own characters.
+export function nodeRemark(id: string | number, state: RemarkState): string {
+  let seed = 0;
+  const key = String(id);
+  for (let i = 0; i < key.length; i++) {
+    seed = Math.imul(seed ^ key.charCodeAt(i), 0x45d9f3b);
+    seed = Math.imul(seed ^ (seed >>> 16), 0x45d9f3b);
+  }
   seed = (seed ^ (seed >>> 16)) >>> 0;
   const phrases = REMARKS[state];
   return phrases[seed % phrases.length];

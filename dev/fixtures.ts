@@ -22,7 +22,7 @@ const metrics: Metrics = {
   procs: 86,
 };
 const base: Node = {
-  id: 1,
+  id: "1",
   name: "香港 · 直连专线",
   sort: 0,
   public: true,
@@ -64,7 +64,7 @@ export const demoNodes: Node[] = [
   base,
   {
     ...base,
-    id: 2,
+    id: "2",
     sort: 1,
     name: "东京 · 樱花快车",
     country: "JP",
@@ -77,7 +77,7 @@ export const demoNodes: Node[] = [
   },
   {
     ...base,
-    id: 3,
+    id: "3",
     sort: 2,
     name: "洛杉矶 · 西海岸",
     country: "US",
@@ -91,7 +91,7 @@ export const demoNodes: Node[] = [
   },
   {
     ...base,
-    id: 4,
+    id: "4",
     sort: 3,
     name: "新加坡 · 狮城加速",
     country: "SG",
@@ -103,7 +103,7 @@ export const demoNodes: Node[] = [
   },
   {
     ...base,
-    id: 5,
+    id: "5",
     sort: 4,
     name: "法兰克福 · 欧洲站",
     country: "DE",
@@ -118,7 +118,7 @@ export const demoNodes: Node[] = [
   },
   {
     ...base,
-    id: 6,
+    id: "6",
     sort: 5,
     name: "首尔 · 新店开张",
     country: "KR",

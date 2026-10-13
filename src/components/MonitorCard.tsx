@@ -113,7 +113,7 @@ export function MonitorCard({
 }: {
   node: Node;
   index: number;
-  onOpen: (id: number) => void;
+  onOpen: (id: string) => void;
 }) {
   const m = node.online ? node.metrics : null;
   const days =
@@ -173,7 +173,7 @@ export function MonitorCard({
         <span className={`status-tag ${m ? "is-live" : ""}`}>{state}</span>
       </div>
       <div className="card-title">
-        <span className="node-id">NO.{String(node.id).padStart(2, "0")}</span>
+        <span className="node-id">NO.{String(index + 1).padStart(2, "0")}</span>
         <Country node={node} />
         <h3 title={node.name}>{node.name}</h3>
         <span className="title-spark" aria-hidden="true">
@@ -332,7 +332,7 @@ export function MonitorCard({
           </strong>
         </small>
         <a
-          href={`/node/${node.id}`}
+          href={`#/server/${encodeURIComponent(String(node.id))}`}
           onClick={(event) => {
             if (
               event.button === 0 &&
